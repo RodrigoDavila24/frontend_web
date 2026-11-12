@@ -416,3 +416,178 @@ describe('RouteProfilePicker with the green (PBI-10 phase B)', () => {
     expect(screen.getByRole('slider', { name: 'Verde' })).toHaveValue('0');
   });
 });
+
+describe('RouteProfilePicker with a repeated name (#165)', () => {
+  function renderWithReplace(props = {}) {
+    const handlers = {
+      onSelect: jest.fn(),
+      onSave: jest.fn(),
+      onDelete: jest.fn(),
+      onReplace: jest.fn().mockImplementation(async (id) => ({ id })),
+    };
+    render(
+      <RouteProfilePicker
+        profiles={[RECOMMENDED_PROFILE, ...profiles]}
+        selectedId={2}
+        isEditable
+        loadFailed={false}
+        {...handlers}
+        {...props}
+      />
+    );
+    return handlers;
+  }
+
+  it('warns while typing, next to the name, and does not save', async () => {
+    const user = userEvent.setup();
+    const { onSave } = renderWithReplace();
+
+    await user.click(screen.getByRole('button', { name: 'Nueva ruta' }));
+    const name = screen.getByLabelText('Nombre');
+    await user.type(name, '  sombreada ');
+
+    const warning = screen.getByText('Ya tienes una ruta llamada «Sombreada».');
+    expect(name).toHaveAttribute('aria-invalid', 'true');
+    expect(name.getAttribute('aria-describedby')).toContain(warning.id);
+    await user.click(screen.getByRole('button', { name: 'Guardar' }));
+    expect(onSave).not.toHaveBeenCalled();
+    // Saving takes the user to the choice.
+    expect(screen.getByRole('button', { name: 'Reemplazar' })).toHaveFocus();
+  });
+
+  it('replaces the existing route after confirming, with the keyboard', async () => {
+    const user = userEvent.setup();
+    const { onReplace, onSelect } = renderWithReplace();
+
+    await user.click(screen.getByRole('button', { name: 'Nueva ruta' }));
+    await user.type(screen.getByLabelText('Nombre'), 'Sombreada{Enter}');
+    await user.keyboard('{Enter}');
+
+    const question = screen.getByRole('group', {
+      name: 'Se sustituirán los pesos de «Sombreada».',
+    });
+    const confirm = within(question).getByRole('button', { name: 'Reemplazar «Sombreada»' });
+    expect(confirm).toHaveFocus();
+    await user.keyboard('{Enter}');
+
+    expect(onReplace).toHaveBeenCalledWith(
+      2,
+      {
+        name: 'Sombreada',
+        weights: { shade: 50, sun: 0, wind: 0, vegetation: 0 },
+        maxDetourPercentage: 25,
+      },
+      null
+    );
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(onSelect).toHaveBeenCalledWith(2);
+  });
+
+  it('warns that the edited route will be deleted when it is renamed to an existing name', async () => {
+    const user = userEvent.setup();
+    const { onReplace } = renderWithReplace({ selectedId: 1 });
+
+    await user.click(screen.getByRole('button', { name: 'Editar Rápida' }));
+    const name = screen.getByLabelText('Nombre');
+    await user.clear(name);
+    await user.type(name, 'Sombreada');
+    await user.click(screen.getByRole('button', { name: 'Reemplazar' }));
+
+    expect(
+      screen.getByText('Se sustituirán los pesos de «Sombreada» y se borrará «Rápida».')
+    ).toBeInTheDocument();
+    // "No reemplazar" goes back to the choice.
+    await user.click(screen.getByRole('button', { name: 'No reemplazar' }));
+    expect(screen.getByRole('button', { name: 'Reemplazar' })).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: 'Reemplazar' }));
+    await user.click(screen.getByRole('button', { name: 'Reemplazar «Sombreada»' }));
+
+    expect(onReplace).toHaveBeenCalledWith(2, expect.objectContaining({ name: 'Sombreada' }), 1);
+  });
+
+  it('suggests a free name with "Cambiar nombre" and puts the focus on it', async () => {
+    const user = userEvent.setup();
+    renderWithReplace();
+
+    await user.click(screen.getByRole('button', { name: 'Nueva ruta' }));
+    await user.type(screen.getByLabelText('Nombre'), 'rápida');
+    await user.click(screen.getByRole('button', { name: 'Cambiar nombre' }));
+
+    expect(screen.getByLabelText('Nombre')).toHaveValue('rápida (2)');
+    expect(screen.getByLabelText('Nombre')).toHaveFocus();
+    expect(screen.queryByText(/Ya tienes una ruta llamada/)).not.toBeInTheDocument();
+  });
+
+  it('offers the same choice when the server answers 409 with the existing route', async () => {
+    const user = userEvent.setup();
+    const { onSave, onReplace } = renderWithReplace();
+    onSave.mockRejectedValue(
+      Object.assign(new Error('Ya tienes una ruta con ese nombre.'), {
+        status: 409,
+        existingId: 9,
+        fields: { name: 'Ya tienes una ruta llamada «Paseo».' },
+      })
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Nueva ruta' }));
+    await user.type(screen.getByLabelText('Nombre'), 'Paseo');
+    await user.click(screen.getByRole('button', { name: 'Guardar' }));
+
+    expect(await screen.findByText('Ya tienes una ruta llamada «Paseo».')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Reemplazar' }));
+    await user.click(screen.getByRole('button', { name: 'Reemplazar «Paseo»' }));
+    expect(onReplace).toHaveBeenCalledWith(9, expect.objectContaining({ name: 'Paseo' }), null);
+  });
+
+  it('does not let a saved route be called "Recomendada"', async () => {
+    const user = userEvent.setup();
+    const { onSave } = renderWithReplace();
+
+    await user.click(screen.getByRole('button', { name: 'Nueva ruta' }));
+    await user.type(screen.getByLabelText('Nombre'), ' recomendada');
+    await user.click(screen.getByRole('button', { name: 'Guardar' }));
+
+    expect(
+      screen.getByText('«Recomendada» es la ruta automática: elige otro nombre.')
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reemplazar' })).not.toBeInTheDocument();
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('closes the pop-up and says what happened when the edited route could not be deleted', async () => {
+    const user = userEvent.setup();
+    const { onReplace, onSelect } = renderWithReplace({ selectedId: 1 });
+    onReplace.mockRejectedValue(
+      Object.assign(
+        new Error('Se ha actualizado «Sombreada», pero no se ha podido borrar «Rápida».'),
+        { saved: { id: 2 } }
+      )
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Editar Rápida' }));
+    await user.clear(screen.getByLabelText('Nombre'));
+    await user.type(screen.getByLabelText('Nombre'), 'Sombreada');
+    await user.click(screen.getByRole('button', { name: 'Reemplazar' }));
+    await user.click(screen.getByRole('button', { name: 'Reemplazar «Sombreada»' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Se ha actualizado «Sombreada», pero no se ha podido borrar «Rápida».'
+    );
+    expect(onSelect).toHaveBeenCalledWith(2);
+  });
+
+  it('keeps the pop-up open with the error when the replacement fails', async () => {
+    const user = userEvent.setup();
+    const { onReplace } = renderWithReplace();
+    onReplace.mockRejectedValue(new Error('No se ha podido guardar la ruta. Inténtalo de nuevo.'));
+
+    await user.click(screen.getByRole('button', { name: 'Nueva ruta' }));
+    await user.type(screen.getByLabelText('Nombre'), 'Sombreada');
+    await user.click(screen.getByRole('button', { name: 'Reemplazar' }));
+    await user.click(screen.getByRole('button', { name: 'Reemplazar «Sombreada»' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se ha podido guardar la ruta.');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+});

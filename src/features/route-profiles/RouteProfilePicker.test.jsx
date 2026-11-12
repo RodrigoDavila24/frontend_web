@@ -59,7 +59,7 @@ describe('RouteProfilePicker', () => {
 
     expect(onSave).toHaveBeenCalledWith(2, {
       name: 'Mucha sombra',
-      weights: { shade: 50, sun: 0, wind: 0 },
+      weights: { shade: 50, sun: 0, wind: 0, vegetation: 0 },
       maxDetourPercentage: 25,
     });
     expect(onSelect).toHaveBeenCalledWith(2);
@@ -81,7 +81,7 @@ describe('RouteProfilePicker', () => {
 
     expect(onSave).toHaveBeenCalledWith(null, {
       name: 'Invierno',
-      weights: { shade: 0, sun: 30, wind: 0 },
+      weights: { shade: 0, sun: 30, wind: 0, vegetation: 0 },
       maxDetourPercentage: 25,
     });
   });
@@ -186,7 +186,7 @@ describe('RouteProfilePicker', () => {
     fireEvent.change(wind, { target: { value: '0' } });
     expect(
       screen.getByText(
-        'Con sombra y sol en neutro y el viento a 0 % es la ruta más rápida: no hay rodeo.'
+        'Con sombra y sol en neutro y el viento y el verde a 0 % es la ruta más rápida: no hay rodeo.'
       )
     ).toBeInTheDocument();
     fireEvent.change(wind, { target: { value: '90' } });
@@ -194,7 +194,7 @@ describe('RouteProfilePicker', () => {
 
     expect(onSave).toHaveBeenCalledWith(3, {
       name: 'Cierzo',
-      weights: { shade: 0, sun: 0, wind: 90 },
+      weights: { shade: 0, sun: 0, wind: 90, vegetation: 0 },
       maxDetourPercentage: 25,
     });
   });

@@ -11,8 +11,11 @@ import {
 } from './shadeSun.js';
 
 const MAX_NAME_LENGTH = 40;
-// Shade and sun share one bar (ADR-030); wind keeps its own.
-const WIND_FIELD = { key: 'wind', label: 'Evitar viento', icon: 'wind' };
+// Shade and sun share one bar (ADR-030); wind and green have their own (ADR-031).
+const FACTOR_FIELDS = [
+  { key: 'wind', label: 'Evitar viento', icon: 'wind' },
+  { key: 'vegetation', label: 'Verde', icon: 'vegetation' },
+];
 // The same limit as the backend (ADR-023).
 const MAX_DETOUR_PERCENTAGE = 40;
 
@@ -21,12 +24,13 @@ export function RouteProfileEditor({ profile = null, onSave, onCancel }) {
   // Routes saved before PBI-8.2 come without wind: it counts as 0. A route saved with shade and sun
   // at once keeps the larger one (ADR-030).
   const [weights, setWeights] = useState(() => {
-    const saved = { shade: 50, sun: 0, wind: 0, ...profile?.weights };
+    const saved = { shade: 50, sun: 0, wind: 0, vegetation: 0, ...profile?.weights };
     return { ...saved, ...weightsFromBalance(shadeSunBalance(saved)) };
   });
   const balance = shadeSunBalance(weights);
   const [maxDetour, setMaxDetour] = useState(profile?.maxDetourPercentage ?? 25);
-  const onlyTime = weights.shade === 0 && weights.sun === 0 && weights.wind === 0;
+  const onlyTime =
+    weights.shade === 0 && weights.sun === 0 && weights.wind === 0 && weights.vegetation === 0;
   const [errors, setErrors] = useState({});
   const shadeSunError = errors.shade || errors.sun;
   const [isSaving, setIsSaving] = useState(false);
@@ -101,26 +105,29 @@ export function RouteProfileEditor({ profile = null, onSave, onCancel }) {
         />
         {shadeSunError && <small className="field-error">{shadeSunError}</small>}
       </div>
-      <div className={`route-profile-weight route-profile-weight-${WIND_FIELD.key}`}>
-        <span>
-          <ProfileIcon kind={WIND_FIELD.icon} />
-          <label htmlFor="route-profile-wind">{WIND_FIELD.label}</label>
-          <output htmlFor="route-profile-wind">{weights.wind} %</output>
-        </span>
-        <input
-          id="route-profile-wind"
-          type="range"
-          min="0"
-          max="100"
-          step="5"
-          value={weights.wind}
-          aria-valuetext={`${weights.wind} %`}
-          onChange={(event) =>
-            setWeights((current) => ({ ...current, wind: Number(event.target.value) }))
-          }
-        />
-        {errors.wind && <small className="field-error">{errors.wind}</small>}
-      </div>
+      {FACTOR_FIELDS.map(({ key, label, icon }) => (
+        // An <output> inside the label would take the label instead of the slider.
+        <div key={key} className={`route-profile-weight route-profile-weight-${key}`}>
+          <span>
+            <ProfileIcon kind={icon} />
+            <label htmlFor={`route-profile-${key}`}>{label}</label>
+            <output htmlFor={`route-profile-${key}`}>{weights[key]} %</output>
+          </span>
+          <input
+            id={`route-profile-${key}`}
+            type="range"
+            min="0"
+            max="100"
+            step="5"
+            value={weights[key]}
+            aria-valuetext={`${weights[key]} %`}
+            onChange={(event) =>
+              setWeights((current) => ({ ...current, [key]: Number(event.target.value) }))
+            }
+          />
+          {errors[key] && <small className="field-error">{errors[key]}</small>}
+        </div>
+      ))}
       <div className="route-profile-weight route-profile-weight-time">
         <span>
           <ProfileIcon kind="time" />
@@ -141,7 +148,7 @@ export function RouteProfileEditor({ profile = null, onSave, onCancel }) {
         />
         <small id="route-profile-detour-help" className="route-profile-help">
           {onlyTime
-            ? 'Con sombra y sol en neutro y el viento a 0 % es la ruta más rápida: no hay rodeo.'
+            ? 'Con sombra y sol en neutro y el viento y el verde a 0 % es la ruta más rápida: no hay rodeo.'
             : `Cuánto más puede tardar que la ruta más rápida: con +${maxDetour} %, un paseo de 20 min puede durar hasta ${Math.floor(20 * (1 + maxDetour / 100))} min.`}
         </small>
         {errors.maxDetourPercentage && (

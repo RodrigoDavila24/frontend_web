@@ -366,6 +366,9 @@ input:focus-visible {
 .all-profiles-list .profile-icon-wind,
 .route-profile-list .profile-icon-wind { color: #3a7ca5; }
 
+.all-profiles-list .profile-icon-vegetation,
+.route-profile-list .profile-icon-vegetation { color: #5a9a2e; }
+
 .all-profiles-list .profile-icon-fastest { color: #6b7b91; }
 
 .route-profile-tools button {
@@ -546,6 +549,8 @@ input:focus-visible {
 .route-profile-weight-shade input { accent-color: #2c8a5f; }
 .route-profile-weight-sun input { accent-color: #d48a12; }
 .route-profile-weight-wind input { accent-color: #3a7ca5; }
+.route-profile-weight-vegetation .profile-icon { color: #5a9a2e; }
+.route-profile-weight-vegetation input { accent-color: #5a9a2e; }
 .route-profile-weight-time .profile-icon { color: #536174; }
 
 /* One bar for shade and sun (ADR-030): shade to the left, neutral in the middle, sun to the right. */
@@ -1534,6 +1539,8 @@ input:focus-visible {
 
 .shade-sun-scale.is-sun .shade-sun-scale-fill { background: #d48a12; }
 .recommendation-weight-wind meter { accent-color: #3a7ca5; }
+.recommendation-weight-vegetation .profile-icon { color: #5a9a2e; }
+.recommendation-weight-vegetation meter { accent-color: #5a9a2e; }
 
 .recommendation-weather,
 .recommendation-attribution {

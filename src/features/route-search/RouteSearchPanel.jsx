@@ -440,6 +440,7 @@ export function RouteSearchPanel({
               distance={displayedRoute.distance}
               duration={displayedRoute.duration}
               shadePercentage={displayedRoute.exposure?.shadePercentage}
+              greenPercentage={displayedRoute.vegetation?.greenPercentage}
               title={showsAlternative ? alternativeLabel : 'Ruta rápida'}
             />
           )}

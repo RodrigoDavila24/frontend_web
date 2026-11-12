@@ -16,6 +16,13 @@ const PATHS = {
       <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
     </>
   ),
+  // Leaf: green, vegetation (PBI-10 phase B). The tree is shade.
+  vegetation: (
+    <>
+      <path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14Z" />
+      <path d="M5 19 13 11" />
+    </>
+  ),
   // Gusts: wind.
   wind: <path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8a2.5 2.5 0 1 1-2.5 2.5" />,
   // Thermometer: the route chosen with the current weather (PBI-9.1).
@@ -73,9 +80,12 @@ export function ProfileIcons({ weights, icon = null }) {
     );
   }
   const balance = shadeSunBalance(weights);
-  const kinds = [balance < 0 && 'shade', balance > 0 && 'sun', weights.wind > 0 && 'wind'].filter(
-    Boolean
-  );
+  const kinds = [
+    balance < 0 && 'shade',
+    balance > 0 && 'sun',
+    weights.wind > 0 && 'wind',
+    weights.vegetation > 0 && 'vegetation',
+  ].filter(Boolean);
   return (
     <span className="profile-icons">
       {(kinds.length ? kinds : ['fastest']).map((kind) => (

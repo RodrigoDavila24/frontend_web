@@ -462,7 +462,7 @@ describe('App', () => {
 
       expect(createRouteProfile).toHaveBeenCalledWith({
         name: 'Verano',
-        weights: { shade: 50, sun: 0, wind: 0 },
+        weights: { shade: 50, sun: 0, wind: 0, vegetation: 0 },
         maxDetourPercentage: 25,
       });
       expect(await screen.findByRole('button', { name: 'Verano' })).toHaveAttribute(

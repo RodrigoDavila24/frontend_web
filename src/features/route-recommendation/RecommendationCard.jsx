@@ -37,7 +37,8 @@ export function weatherSummary(weather) {
 export function RecommendationCard({ recommendation, isExpanded = true }) {
   if (!recommendation) return null;
   const { label, reason, weights, maxDetourPercentage, weather } = recommendation;
-  const weighs = weights.shade > 0 || weights.sun > 0 || weights.wind > 0;
+  const vegetation = weights.vegetation ?? 0;
+  const weighs = weights.shade > 0 || weights.sun > 0 || weights.wind > 0 || vegetation > 0;
   const balance = shadeSunBalance(weights);
   // Fill of the shade-sun bar from the centre: to the left for shade, to the right for sun.
   const fill = {
@@ -86,6 +87,17 @@ export function RecommendationCard({ recommendation, isExpanded = true }) {
               aria-labelledby="recommendation-weight-wind"
             />
             <span className="recommendation-weight-value">{weights.wind} %</span>
+          </li>
+          <li className="recommendation-weight recommendation-weight-vegetation">
+            <ProfileIcon kind="vegetation" />
+            <span id="recommendation-weight-vegetation">Verde</span>
+            <meter
+              min="0"
+              max="100"
+              value={vegetation}
+              aria-labelledby="recommendation-weight-vegetation"
+            />
+            <span className="recommendation-weight-value">{vegetation} %</span>
           </li>
           <li className="recommendation-weight recommendation-weight-time">
             <ProfileIcon kind="time" />

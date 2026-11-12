@@ -29,7 +29,14 @@ const formatWind = (route) =>
     ? `${Math.round(route.windExposure.exposure)} % de exposición al viento`
     : null;
 
-const routeFactors = (route) => [formatShade(route), formatWind(route)].filter(Boolean);
+// Only when it was calculated (shade, sun or green weigh; PBI-10 phase B).
+const formatGreen = (route) =>
+  route?.vegetation?.status === 'available'
+    ? `${Math.round(route.vegetation.greenPercentage)} % verde`
+    : null;
+
+const routeFactors = (route) =>
+  [formatShade(route), formatWind(route), formatGreen(route)].filter(Boolean);
 
 function RouteFactors({ route }) {
   return routeFactors(route).map((factor) => <span key={factor}>{factor}</span>);
@@ -48,6 +55,9 @@ function changesSummary(comparison) {
   }
   if (Number.isFinite(comparison.windChangePoints)) {
     changes.push(pointsChange(comparison.windChangePoints, 'exposición al viento'));
+  }
+  if (Number.isFinite(comparison.greenChangePercentagePoints)) {
+    changes.push(pointsChange(comparison.greenChangePercentagePoints, 'verde'));
   }
   return changes.join(' y ');
 }

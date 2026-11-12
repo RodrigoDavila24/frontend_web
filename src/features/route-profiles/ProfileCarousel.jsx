@@ -11,6 +11,7 @@ export function weightsSummary({ weights, maxDetourPercentage, summary = null })
   const lines = [
     balance !== 0 && balanceText(balance),
     weights.wind > 0 && `Evitar viento ${weights.wind} %`,
+    weights.vegetation > 0 && `Verde ${weights.vegetation} %`,
   ].filter(Boolean);
   if (!lines.length) return ['Lo antes posible'];
   return [...lines, `Tiempo +${maxDetourPercentage} %`];

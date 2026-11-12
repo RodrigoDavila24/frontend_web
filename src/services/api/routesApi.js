@@ -77,11 +77,25 @@ function isValidWindExposure(windExposure) {
   );
 }
 
+// Green percentage of the route (PBI-10 phase B), 0-100.
+function isValidVegetation(vegetation) {
+  if (vegetation === undefined || vegetation?.status === 'unavailable') {
+    return vegetation === undefined || vegetation.greenPercentage === null;
+  }
+  return (
+    vegetation?.status === 'available' &&
+    Number.isFinite(vegetation.greenPercentage) &&
+    vegetation.greenPercentage >= 0 &&
+    vegetation.greenPercentage <= 100
+  );
+}
+
 function isValidEnvironmentalRoute(route) {
   return (
     isValidRoute(route) &&
     isValidExposure(route.exposure) &&
-    isValidWindExposure(route.windExposure)
+    isValidWindExposure(route.windExposure) &&
+    isValidVegetation(route.vegetation)
   );
 }
 
@@ -123,6 +137,7 @@ export async function getWeightedRouteComparison(
     shaded: data.comparison.selected ?? null,
     shadeImprovementPercentagePoints: data.comparison.shadeChangePercentagePoints ?? null,
     windChangePoints: data.comparison.windChangePoints ?? null,
+    greenChangePercentagePoints: data.comparison.greenChangePercentagePoints ?? null,
   };
 
   if (!isValidComparison(comparison)) {
@@ -181,6 +196,7 @@ export async function getRecommendedRoute({ origin, destination }, { signal } = 
     shaded: data.comparison.selected ?? null,
     shadeImprovementPercentagePoints: data.comparison.shadeChangePercentagePoints ?? null,
     windChangePoints: data.comparison.windChangePoints ?? null,
+    greenChangePercentagePoints: data.comparison.greenChangePercentagePoints ?? null,
   };
 
   if (

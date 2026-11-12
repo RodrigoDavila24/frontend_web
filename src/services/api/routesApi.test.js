@@ -103,6 +103,7 @@ describe('getFastestRoute', () => {
       shaded: environmentalRoute,
       shadeImprovementPercentagePoints: 40,
       windChangePoints: null,
+      greenChangePercentagePoints: null,
     });
     expect(global.fetch.mock.calls[0][0]).toMatch(/\/routes\/weighted$/);
     expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toEqual({
@@ -220,6 +221,7 @@ describe('getFastestRoute', () => {
         shaded: shadedRoute,
         shadeImprovementPercentagePoints: 60,
         windChangePoints: 0,
+        greenChangePercentagePoints: null,
       });
       expect(global.fetch.mock.calls[0][0]).toMatch(/\/routes\/recommended$/);
       // Always for now: no date, time or weights are sent.

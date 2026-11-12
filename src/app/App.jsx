@@ -179,6 +179,7 @@ export function App({ userMenu = null }) {
                   onSelect={selectProfile}
                   onSave={saveProfile}
                   onDelete={deleteProfile}
+                  onReplace={routeProfiles.replaceProfile}
                 />
               }
               solarDate={solarDateTime.date}

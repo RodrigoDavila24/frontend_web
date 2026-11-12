@@ -639,6 +639,43 @@ input:focus-visible {
   font-size: 0.76rem;
 }
 
+/* A route name that another route already has (#165): replace it or change the name. */
+.name-conflict-live:empty { display: none; }
+
+.name-conflict-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.name-conflict-actions button {
+  min-height: 2.4rem;
+  border-radius: 0.7rem;
+  padding: 0 0.9rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.name-conflict-actions .profile-dialog-danger {
+  border: 0;
+  color: #ffffff;
+}
+
+.name-conflict-confirm {
+  display: grid;
+  gap: 0.5rem;
+  border: 1px solid #efc9b8;
+  border-radius: 0.7rem;
+  padding: 0.65rem 0.75rem;
+  background: #fff6f1;
+}
+
+.name-conflict-confirm p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.85rem;
+}
+
 .profile-dialog-actions {
   display: flex;
   justify-content: flex-end;
@@ -2800,7 +2837,8 @@ input:focus-visible {
   .route-profile-weight input[type='range'] { min-height: 2.75rem; }
 
   .route-profile-name input,
-  .profile-dialog-actions button { min-height: 2.75rem; }
+  .profile-dialog-actions button,
+  .name-conflict-actions button { min-height: 2.75rem; }
 
   .route-profiles-all {
     min-height: 2.75rem;

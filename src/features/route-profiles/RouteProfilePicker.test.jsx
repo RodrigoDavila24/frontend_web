@@ -230,15 +230,16 @@ describe('RouteProfilePicker', () => {
     const { onSave } = renderPicker();
     onSave.mockRejectedValue(
       Object.assign(new Error('Revisa los datos'), {
-        fields: { name: 'Ya tienes una ruta con ese nombre.' },
+        fields: { name: 'Escribe un nombre de 1 a 40 caracteres.' },
       })
     );
 
     await user.click(screen.getByRole('button', { name: 'Nueva ruta' }));
-    await user.type(screen.getByLabelText('Nombre'), 'Rápida');
+    // A name the list does not have: a repeated one is warned about before saving (#165).
+    await user.type(screen.getByLabelText('Nombre'), 'Paseo');
     await user.click(screen.getByRole('button', { name: 'Guardar' }));
 
-    expect(await screen.findByText('Ya tienes una ruta con ese nombre.')).toBeInTheDocument();
+    expect(await screen.findByText('Escribe un nombre de 1 a 40 caracteres.')).toBeInTheDocument();
     expect(screen.getByLabelText('Nombre')).toHaveAttribute('aria-invalid', 'true');
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });

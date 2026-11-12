@@ -74,11 +74,45 @@ export function useRouteProfiles() {
     }));
   }
 
+  // "Reemplazar" a route with the same name (#165): the existing one takes the new weights and,
+  // when another route was being renamed to its name, that one is deleted.
+  async function replaceProfile(existingId, draft, editedId = null) {
+    const editedName = state.profiles.find(({ id }) => id === editedId)?.name;
+    const saved = await updateRouteProfile(existingId, draft);
+    setState((current) => ({
+      ...current,
+      profiles: current.profiles.map((profile) => (profile.id === existingId ? saved : profile)),
+    }));
+    if (editedId === null) return saved;
+    try {
+      await deleteRouteProfile(editedId);
+      setState((current) => ({
+        ...current,
+        profiles: current.profiles.filter((profile) => profile.id !== editedId),
+      }));
+    } catch {
+      // The list shows again what the server has.
+      try {
+        setState({ status: 'ready', profiles: await listRouteProfiles() });
+      } catch {
+        // The list stays as it was.
+      }
+      throw Object.assign(
+        new Error(
+          `Se ha actualizado «${saved.name}», pero no se ha podido borrar «${editedName}».`
+        ),
+        { saved }
+      );
+    }
+    return saved;
+  }
+
   return {
     profiles: state.profiles,
     isEditable: state.status === 'ready',
     loadFailed: state.status === 'offline',
     saveProfile,
     deleteProfile,
+    replaceProfile,
   };
 }

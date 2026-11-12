@@ -105,6 +105,9 @@ solo en el backend.
 - Clear borra un borrador o un punto; Reset además cancela el GPS pendiente y borra los mensajes.
 - El autocompletado empieza a partir de 3 caracteres y 350 ms, con estados de carga, vacío y error.
 - Usa las flechas y Enter para elegir una sugerencia; Escape o perder el foco cierra la lista.
+- Enter sin ninguna sugerencia resaltada elige la primera (p. ej. «plaza españa» y Enter). Si aún
+  se están buscando, espera a que lleguen; si no hay ninguna, sale "No se han encontrado lugares" y
+  no se marca nada. Escribir otra cosa, Escape o salir del campo cancelan esa espera.
 - Comprueba anchos de 375, 390, 768, 1366 y 1920 px, etiquetas largas y el zoom del navegador.
 - El GPS necesita HTTPS o localhost. En un móvil, HTTP normal por la red local mostrará el error de
   contexto no seguro; usa HTTPS para probar el permiso y la ubicación.
@@ -124,11 +127,12 @@ solo en el backend.
 ## Comprobaciones de la PBI-6
 
 - Bajo origen y destino aparecen tus rutas como tarjetas con icono: Rápida, Sombreada, Soleada y las
-  que crees. Con sombra y sol a la vez salen los dos iconos.
+  que crees. Sombra y sol son una sola escala (ADR-030): la tarjeta muestra el árbol o el sol, nunca
+  los dos.
 - Si alguna tarjeta queda cortada aparece una flecha en ese lado, que mueve la fila; desde 4 rutas,
   "Ver todas" abre un pop-up con todas y un buscador que no distingue tildes ni mayúsculas.
-- Los iconos ＋ y lápiz abren un pop-up con el nombre, dos barras de 0 a 100 % (sombra y sol) y el tiempo
-  extra máximo (0 a 40 %, desactivado si sombra y sol están a 0); en el móvil sube desde abajo. Un nombre repetido se marca en el campo; Escape o tocar fuera lo cierran.
+- Los iconos ＋ y lápiz abren un pop-up con el nombre, una barra "Sombra o sol" (ver abajo) y el tiempo
+  extra máximo (0 a 40 %, desactivado si sombra y sol están en neutro y el viento a 0); en el móvil sube desde abajo. Un nombre repetido se marca en el campo; Escape o tocar fuera lo cierran.
 - Con sombra o sol por encima de 0 se piden fecha y hora; la comparación y la leyenda usan el nombre
   de la ruta elegida.
 - La papelera pide confirmación en otro pop-up y solo borra de tu cuenta; siempre queda al menos una
@@ -136,7 +140,7 @@ solo en el backend.
 
 ## Comprobaciones de la PBI-8.2 (viento en las rutas)
 
-- El pop-up de una ruta tiene una tercera barra, "Evitar viento" (0 a 100 %), con su icono. Las rutas
+- El pop-up de una ruta tiene otra barra, "Evitar viento" (0 a 100 %), con su icono. Las rutas
   guardadas antes tienen el viento a 0; la tarjeta de una ruta con viento muestra "Evitar viento N %".
 - Con sombra, sol y viento a 0 la barra de tiempo extra se desactiva; con solo viento se compara con
   la ruta rápida, pero no se piden fecha y hora: se usa el viento actual de Open-Meteo.
@@ -171,6 +175,25 @@ backend.
   sugerencias, y Enter en "Calcular ruta" y "Ver más".
 - Prueba real del 2026-11-12 (11:23, 18 °C, sensación 17,5 °C, viento de 13 km/h): Plaza España →
   Parque Grande da "Tiempo templado", pesos a 0 y la misma ruta que "Rápida" (33 min, 2,8 km).
+
+## Comprobaciones de la barra Sombra ↔ Sol
+
+Sombra y sol son los dos extremos de una sola escala (ADR-030: ver DECISIONS.md en la carpeta docs
+del Drive del equipo). La API no cambia: sigue enviando `weights.shade` y `weights.sun`, pero nunca los
+dos por encima de 0.
+
+- En el pop-up de una ruta hay una sola barra "Sombra o sol": "Sombra" a la izquierda, "Sol" a la
+  derecha y una marca en el centro. En el centro es "Neutro" (sombra 0, sol 0); hacia la izquierda
+  sube la sombra y hacia la derecha el sol, de 5 en 5 hasta 100 % por cada lado. El valor se lee al
+  lado ("Sombra 50 %", "Neutro", "Sol 30 %") y el tirador toma el color del lado elegido.
+- Con el teclado: Tab hasta la barra y flechas izquierda/derecha. Un lector de pantalla lee el mismo
+  texto (`aria-valuetext`). En el móvil la barra mide al menos 44 px de alto.
+- Una ruta guardada antes con sombra y sol a la vez se abre con el mayor de los dos (el neutro si son
+  iguales); al guardar se envía solo ese. Si el backend la rechaza, el mensaje sale bajo la barra.
+- Las tarjetas y "Ver todas" muestran una sola línea ("Sombra N %" o "Sol N %") con un solo icono, y
+  la tarjeta del motivo de la ruta recomendada usa la misma escala, rellena desde el centro.
+- Comprobado con Playwright y Chrome a 390, 320 y 1366 px (2026-11-12): sin scroll horizontal,
+  controles del pop-up de al menos 44×44 px en el móvil y uso completo con el teclado.
 
 ## Comprobaciones de Iniciar ruta
 

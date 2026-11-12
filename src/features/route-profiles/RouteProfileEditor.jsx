@@ -1,24 +1,34 @@
 import { useState } from 'react';
 
 import { ProfileIcon } from './ProfileIcon.jsx';
+import {
+  SHADE_SUN_MAX,
+  SHADE_SUN_STEP,
+  balanceSide,
+  balanceText,
+  shadeSunBalance,
+  weightsFromBalance,
+} from './shadeSun.js';
 
 const MAX_NAME_LENGTH = 40;
-// Also used to show the weights of the recommended route (PBI-9.1) with the same icons and scale.
-export const WEIGHT_FIELDS = [
-  { key: 'shade', label: 'Sombra', icon: 'shade' },
-  { key: 'sun', label: 'Sol', icon: 'sun' },
-  { key: 'wind', label: 'Evitar viento', icon: 'wind' },
-];
+// Shade and sun share one bar (ADR-030); wind keeps its own.
+const WIND_FIELD = { key: 'wind', label: 'Evitar viento', icon: 'wind' };
 // The same limit as the backend (ADR-023).
 const MAX_DETOUR_PERCENTAGE = 40;
 
 export function RouteProfileEditor({ profile = null, onSave, onCancel }) {
   const [name, setName] = useState(profile?.name ?? '');
-  // Routes saved before PBI-8.2 come without wind: it counts as 0.
-  const [weights, setWeights] = useState({ shade: 50, sun: 0, wind: 0, ...profile?.weights });
+  // Routes saved before PBI-8.2 come without wind: it counts as 0. A route saved with shade and sun
+  // at once keeps the larger one (ADR-030).
+  const [weights, setWeights] = useState(() => {
+    const saved = { shade: 50, sun: 0, wind: 0, ...profile?.weights };
+    return { ...saved, ...weightsFromBalance(shadeSunBalance(saved)) };
+  });
+  const balance = shadeSunBalance(weights);
   const [maxDetour, setMaxDetour] = useState(profile?.maxDetourPercentage ?? 25);
   const onlyTime = weights.shade === 0 && weights.sun === 0 && weights.wind === 0;
   const [errors, setErrors] = useState({});
+  const shadeSunError = errors.shade || errors.sun;
   const [isSaving, setIsSaving] = useState(false);
 
   async function submit(event) {
@@ -55,29 +65,62 @@ export function RouteProfileEditor({ profile = null, onSave, onCancel }) {
           {errors.name}
         </p>
       )}
-      {WEIGHT_FIELDS.map(({ key, label, icon }) => (
-        // An <output> inside the label would take the label instead of the slider.
-        <div key={key} className={`route-profile-weight route-profile-weight-${key}`}>
+      {/* One bar: shade to the left, neutral in the middle, sun to the right (ADR-030). */}
+      <div className="route-profile-weight route-profile-weight-shade-sun">
+        <span>
+          <ProfileIcon kind={balance > 0 ? 'sun' : 'shade'} />
+          <label htmlFor="route-profile-shade-sun">Sombra o sol</label>
+          <output htmlFor="route-profile-shade-sun">{balanceText(balance)}</output>
+        </span>
+        <span className="shade-sun-ends" aria-hidden="true">
           <span>
-            <ProfileIcon kind={icon} />
-            <label htmlFor={`route-profile-${key}`}>{label}</label>
-            <output htmlFor={`route-profile-${key}`}>{weights[key]} %</output>
+            <ProfileIcon kind="shade" />
+            Sombra
           </span>
-          <input
-            id={`route-profile-${key}`}
-            type="range"
-            min="0"
-            max="100"
-            step="5"
-            value={weights[key]}
-            aria-valuetext={`${weights[key]} %`}
-            onChange={(event) =>
-              setWeights((current) => ({ ...current, [key]: Number(event.target.value) }))
-            }
-          />
-          {errors[key] && <small className="field-error">{errors[key]}</small>}
-        </div>
-      ))}
+          <span>
+            Sol
+            <ProfileIcon kind="sun" />
+          </span>
+        </span>
+        <input
+          id="route-profile-shade-sun"
+          className={`shade-sun-range is-${balanceSide(balance)}`}
+          type="range"
+          min={-SHADE_SUN_MAX}
+          max={SHADE_SUN_MAX}
+          step={SHADE_SUN_STEP}
+          value={balance}
+          aria-valuetext={balanceText(balance)}
+          aria-invalid={Boolean(shadeSunError)}
+          onChange={(event) =>
+            setWeights((current) => ({
+              ...current,
+              ...weightsFromBalance(Number(event.target.value)),
+            }))
+          }
+        />
+        {shadeSunError && <small className="field-error">{shadeSunError}</small>}
+      </div>
+      <div className={`route-profile-weight route-profile-weight-${WIND_FIELD.key}`}>
+        <span>
+          <ProfileIcon kind={WIND_FIELD.icon} />
+          <label htmlFor="route-profile-wind">{WIND_FIELD.label}</label>
+          <output htmlFor="route-profile-wind">{weights.wind} %</output>
+        </span>
+        <input
+          id="route-profile-wind"
+          type="range"
+          min="0"
+          max="100"
+          step="5"
+          value={weights.wind}
+          aria-valuetext={`${weights.wind} %`}
+          onChange={(event) =>
+            setWeights((current) => ({ ...current, wind: Number(event.target.value) }))
+          }
+        />
+        {errors.wind && <small className="field-error">{errors.wind}</small>}
+      </div>
       <div className="route-profile-weight route-profile-weight-time">
         <span>
           <ProfileIcon kind="time" />
@@ -98,7 +141,7 @@ export function RouteProfileEditor({ profile = null, onSave, onCancel }) {
         />
         <small id="route-profile-detour-help" className="route-profile-help">
           {onlyTime
-            ? 'Con sombra, sol y viento a 0 % es la ruta más rápida: no hay rodeo.'
+            ? 'Con sombra y sol en neutro y el viento a 0 % es la ruta más rápida: no hay rodeo.'
             : `Cuánto más puede tardar que la ruta más rápida: con +${maxDetour} %, un paseo de 20 min puede durar hasta ${Math.floor(20 * (1 + maxDetour / 100))} min.`}
         </small>
         {errors.maxDetourPercentage && (

@@ -1,3 +1,5 @@
+import { shadeSunBalance } from './shadeSun.js';
+
 const PATHS = {
   // Lightning: only time matters.
   fastest: <path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2Z" />,
@@ -70,11 +72,10 @@ export function ProfileIcons({ weights, icon = null }) {
       </span>
     );
   }
-  const kinds = [
-    weights.shade > 0 && 'shade',
-    weights.sun > 0 && 'sun',
-    weights.wind > 0 && 'wind',
-  ].filter(Boolean);
+  const balance = shadeSunBalance(weights);
+  const kinds = [balance < 0 && 'shade', balance > 0 && 'sun', weights.wind > 0 && 'wind'].filter(
+    Boolean
+  );
   return (
     <span className="profile-icons">
       {(kinds.length ? kinds : ['fastest']).map((kind) => (

@@ -1,5 +1,5 @@
 import { ProfileIcon } from '../route-profiles/ProfileIcon.jsx';
-import { WEIGHT_FIELDS } from '../route-profiles/RouteProfileEditor.jsx';
+import { SHADE_SUN_MAX, balanceText, shadeSunBalance } from '../route-profiles/shadeSun.js';
 
 const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
 const numberFormat = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 });
@@ -37,7 +37,13 @@ export function weatherSummary(weather) {
 export function RecommendationCard({ recommendation, isExpanded = true }) {
   if (!recommendation) return null;
   const { label, reason, weights, maxDetourPercentage, weather } = recommendation;
-  const weighs = WEIGHT_FIELDS.some(({ key }) => weights[key] > 0);
+  const weighs = weights.shade > 0 || weights.sun > 0 || weights.wind > 0;
+  const balance = shadeSunBalance(weights);
+  // Fill of the shade-sun bar from the centre: to the left for shade, to the right for sun.
+  const fill = {
+    left: `${50 - Math.max(0, -balance) / 2}%`,
+    width: `${Math.abs(balance) / 2}%`,
+  };
 
   return (
     <section
@@ -53,19 +59,34 @@ export function RecommendationCard({ recommendation, isExpanded = true }) {
       </p>
       <div className="recommendation-details">
         <ul className="recommendation-weights" aria-label="Pesos aplicados">
-          {WEIGHT_FIELDS.map(({ key, label: factor, icon }) => (
-            <li key={key} className={`recommendation-weight recommendation-weight-${key}`}>
-              <ProfileIcon kind={icon} />
-              <span id={`recommendation-weight-${key}`}>{factor}</span>
-              <meter
-                min="0"
-                max="100"
-                value={weights[key]}
-                aria-labelledby={`recommendation-weight-${key}`}
-              />
-              <span className="recommendation-weight-value">{weights[key]} %</span>
-            </li>
-          ))}
+          {/* The same scale as the route editor: one bar from shade to sun (ADR-030). */}
+          <li className="recommendation-weight recommendation-weight-shade-sun">
+            <ProfileIcon kind={balance > 0 ? 'sun' : 'shade'} />
+            <span id="recommendation-weight-shade-sun">Sombra o sol</span>
+            <span
+              className={`shade-sun-scale ${balance > 0 ? 'is-sun' : 'is-shade'}`}
+              role="meter"
+              aria-labelledby="recommendation-weight-shade-sun"
+              aria-valuemin={-SHADE_SUN_MAX}
+              aria-valuemax={SHADE_SUN_MAX}
+              aria-valuenow={balance}
+              aria-valuetext={balanceText(balance)}
+            >
+              <span className="shade-sun-scale-fill" style={fill} />
+            </span>
+            <span className="recommendation-weight-value">{balanceText(balance)}</span>
+          </li>
+          <li className="recommendation-weight recommendation-weight-wind">
+            <ProfileIcon kind="wind" />
+            <span id="recommendation-weight-wind">Evitar viento</span>
+            <meter
+              min="0"
+              max="100"
+              value={weights.wind}
+              aria-labelledby="recommendation-weight-wind"
+            />
+            <span className="recommendation-weight-value">{weights.wind} %</span>
+          </li>
           <li className="recommendation-weight recommendation-weight-time">
             <ProfileIcon kind="time" />
             <span>Tiempo extra máximo</span>

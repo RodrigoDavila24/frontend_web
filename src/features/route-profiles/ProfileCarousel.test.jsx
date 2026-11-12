@@ -29,16 +29,17 @@ describe('ProfileCarousel', () => {
   });
   afterEach(() => jest.restoreAllMocks());
 
-  it('shows both icons for a route that weighs shade and sun', () => {
+  it('shows shade and sun as one scale, with the larger one for an old route (ADR-030)', () => {
     const { container } = render(
       <ProfileCarousel profiles={profiles} selectedId={2} onSelect={jest.fn()} />
     );
     const card = screen.getByRole('button', { name: 'Paseo de tarde' });
 
-    expect(card.querySelectorAll('.profile-icon-shade, .profile-icon-sun')).toHaveLength(2);
-    // One line per factor, so the card does not get wider.
+    // Saved with shade 30 and sun 20: shade wins, with one icon and one line.
+    expect(card.querySelectorAll('.profile-icon-shade')).toHaveLength(1);
+    expect(card.querySelectorAll('.profile-icon-sun')).toHaveLength(0);
     expect(screen.getByText('Sombra 30 %')).toBeInTheDocument();
-    expect(screen.getByText('Sol 20 %')).toBeInTheDocument();
+    expect(screen.queryByText('Sol 20 %')).not.toBeInTheDocument();
     expect(container.querySelector('.route-profile-arrow')).toBeNull();
   });
 

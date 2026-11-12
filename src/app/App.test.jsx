@@ -593,7 +593,10 @@ describe('App', () => {
         await screen.findByRole('heading', { name: 'Recomendada: Calor' })
       ).toBeInTheDocument();
       expect(screen.getByText(recommendation.reason)).toBeInTheDocument();
-      expect(screen.getByLabelText('Sombra')).toHaveAttribute('value', '50');
+      expect(screen.getByRole('meter', { name: 'Sombra o sol' })).toHaveAttribute(
+        'aria-valuetext',
+        'Sombra 50 %'
+      );
       expect(screen.getByText(/Tiempo usado \(dato de las 13:00\): 30 °C/)).toBeInTheDocument();
       expect(
         screen.getByText(/Recomendada añade 1 min y tiene 70 puntos más de sombra/)

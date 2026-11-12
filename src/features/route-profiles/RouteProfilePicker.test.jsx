@@ -49,7 +49,10 @@ describe('RouteProfilePicker', () => {
     const dialog = screen.getByRole('dialog', { name: 'Editar ruta' });
     expect(within(dialog).getByLabelText('Nombre')).toHaveValue('Sombreada');
     expect(within(dialog).getByLabelText('Nombre')).toHaveFocus();
-    expect(within(dialog).getByRole('slider', { name: 'Sombra' })).toHaveValue('50');
+    // One bar for shade and sun (ADR-030): shade to the left, so 50 % of shade is -50.
+    const shadeSun = within(dialog).getByRole('slider', { name: 'Sombra o sol' });
+    expect(shadeSun).toHaveValue('-50');
+    expect(shadeSun).toHaveAttribute('aria-valuetext', 'Sombra 50 %');
     await user.clear(within(dialog).getByLabelText('Nombre'));
     await user.type(within(dialog).getByLabelText('Nombre'), 'Mucha sombra');
     await user.click(within(dialog).getByRole('button', { name: 'Guardar' }));
@@ -66,19 +69,101 @@ describe('RouteProfilePicker', () => {
   it('creates a new route, with the weights set on the sliders', async () => {
     const user = userEvent.setup();
     const { onSave } = renderPicker();
-    onSave.mockResolvedValue({ id: 3, name: 'Invierno', weights: { shade: 50, sun: 10 } });
+    onSave.mockResolvedValue({ id: 3, name: 'Invierno', weights: { shade: 0, sun: 30 } });
 
     await user.click(screen.getByRole('button', { name: 'Nueva ruta' }));
     const dialog = screen.getByRole('dialog', { name: 'Nueva ruta' });
     await user.type(within(dialog).getByLabelText('Nombre'), 'Invierno');
-    within(dialog).getByRole('slider', { name: 'Sol' }).focus();
-    await user.keyboard('{ArrowRight}{ArrowRight}');
+    fireEvent.change(within(dialog).getByRole('slider', { name: 'Sombra o sol' }), {
+      target: { value: '30' },
+    });
     await user.click(within(dialog).getByRole('button', { name: 'Guardar' }));
 
     expect(onSave).toHaveBeenCalledWith(null, {
       name: 'Invierno',
-      weights: { shade: 50, sun: expect.any(Number), wind: 0 },
+      weights: { shade: 0, sun: 30, wind: 0 },
       maxDetourPercentage: 25,
+    });
+  });
+
+  describe('one bar for shade and sun (ADR-030)', () => {
+    async function openNewRoute(user) {
+      await user.click(screen.getByRole('button', { name: 'Nueva ruta' }));
+      return within(screen.getByRole('dialog', { name: 'Nueva ruta' }));
+    }
+
+    it('goes from shade on the left, through neutral, to sun on the right', async () => {
+      const user = userEvent.setup();
+      renderPicker();
+      const dialog = await openNewRoute(user);
+      const bar = dialog.getByRole('slider', { name: 'Sombra o sol' });
+
+      expect(bar).toHaveAttribute('min', '-100');
+      expect(bar).toHaveAttribute('max', '100');
+      expect(bar).toHaveAttribute('step', '5');
+      expect(dialog.queryByRole('slider', { name: 'Sombra' })).not.toBeInTheDocument();
+      expect(dialog.queryByRole('slider', { name: 'Sol' })).not.toBeInTheDocument();
+      fireEvent.change(bar, { target: { value: '0' } });
+      expect(bar).toHaveAttribute('aria-valuetext', 'Neutro');
+      expect(dialog.getByText('Neutro', { selector: 'output' })).toBeInTheDocument();
+      fireEvent.change(bar, { target: { value: '30' } });
+      expect(bar).toHaveAttribute('aria-valuetext', 'Sol 30 %');
+      fireEvent.change(bar, { target: { value: '-100' } });
+      expect(bar).toHaveAttribute('aria-valuetext', 'Sombra 100 %');
+    });
+
+    it('is one native range reachable with Tab (the arrows move it in the browser)', async () => {
+      const user = userEvent.setup();
+      renderPicker();
+      const dialog = await openNewRoute(user);
+      const bar = dialog.getByRole('slider', { name: 'Sombra o sol' });
+
+      expect(bar).toHaveAttribute('type', 'range');
+      dialog.getByLabelText('Nombre').focus();
+      await user.tab();
+      expect(bar).toHaveFocus();
+      await user.tab();
+      expect(dialog.getByRole('slider', { name: 'Evitar viento' })).toHaveFocus();
+    });
+
+    it('opens a route saved with shade and sun at once with the larger one', async () => {
+      const user = userEvent.setup();
+      const both = {
+        id: 3,
+        name: 'Antigua',
+        presetKey: null,
+        weights: { shade: 30, sun: 60, wind: 0 },
+        maxDetourPercentage: 25,
+      };
+      renderPicker({ profiles: [...profiles, both], selectedId: 3 });
+
+      await user.click(screen.getByRole('button', { name: 'Editar Antigua' }));
+
+      expect(screen.getByRole('slider', { name: 'Sombra o sol' })).toHaveValue('60');
+    });
+
+    it('shows the error of the backend under the bar', async () => {
+      const user = userEvent.setup();
+      const { onSave } = renderPicker();
+      onSave.mockRejectedValue(
+        Object.assign(new Error('Los pesos no son válidos.'), {
+          fields: {
+            shade: 'Elige sombra o sol, no los dos a la vez.',
+            sun: 'Elige sombra o sol, no los dos a la vez.',
+          },
+        })
+      );
+      const dialog = await openNewRoute(user);
+      await user.type(dialog.getByLabelText('Nombre'), 'Mal');
+      await user.click(dialog.getByRole('button', { name: 'Guardar' }));
+
+      expect(
+        await dialog.findByText('Elige sombra o sol, no los dos a la vez.')
+      ).toBeInTheDocument();
+      expect(dialog.getByRole('slider', { name: 'Sombra o sol' })).toHaveAttribute(
+        'aria-invalid',
+        'true'
+      );
     });
   });
 
@@ -100,7 +185,9 @@ describe('RouteProfilePicker', () => {
     expect(wind).toHaveValue('70');
     fireEvent.change(wind, { target: { value: '0' } });
     expect(
-      screen.getByText('Con sombra, sol y viento a 0 % es la ruta más rápida: no hay rodeo.')
+      screen.getByText(
+        'Con sombra y sol en neutro y el viento a 0 % es la ruta más rápida: no hay rodeo.'
+      )
     ).toBeInTheDocument();
     fireEvent.change(wind, { target: { value: '90' } });
     await user.click(screen.getByRole('button', { name: 'Guardar' }));

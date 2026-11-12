@@ -30,10 +30,14 @@ describe('RecommendationCard', () => {
     expect(screen.getByRole('status')).toHaveTextContent(hotAndCierzo.reason);
     const weights = within(screen.getByRole('list', { name: 'Pesos aplicados' }));
     // Same labels and 0-100 scale as the route editor.
-    expect(weights.getByLabelText('Sombra')).toHaveAttribute('value', '50');
-    expect(weights.getByLabelText('Sol')).toHaveAttribute('value', '0');
+    // Same scale as the route editor: one bar from shade (-100) to sun (100) (ADR-030).
+    const shadeSun = weights.getByRole('meter', { name: 'Sombra o sol' });
+    expect(shadeSun).toHaveAttribute('aria-valuenow', '-50');
+    expect(shadeSun).toHaveAttribute('aria-valuemin', '-100');
+    expect(shadeSun).toHaveAttribute('aria-valuemax', '100');
+    expect(shadeSun).toHaveAttribute('aria-valuetext', 'Sombra 50 %');
+    expect(shadeSun.closest('li')).toHaveTextContent('Sombra 50 %');
     expect(weights.getByLabelText('Evitar viento')).toHaveAttribute('value', '50');
-    expect(weights.getByLabelText('Sombra')).toHaveAttribute('max', '100');
     expect(weights.getByText('Tiempo extra máximo').closest('li')).toHaveTextContent('+25 %');
     expect(
       screen.getByText(
@@ -57,6 +61,10 @@ describe('RecommendationCard', () => {
     );
 
     expect(screen.getByText('Tiempo extra máximo').closest('li')).toHaveTextContent('Sin rodeo');
+    expect(screen.getByRole('meter', { name: 'Sombra o sol' })).toHaveAttribute(
+      'aria-valuetext',
+      'Neutro'
+    );
   });
 
   it('explains a recommendation without weather', () => {

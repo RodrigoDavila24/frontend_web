@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { ProfileIcon, ProfileIcons } from './ProfileIcon.jsx';
+import { balanceText, shadeSunBalance } from './shadeSun.js';
 
-const FACTOR_LABELS = { shade: 'Sombra', sun: 'Sol', wind: 'Evitar viento' };
-
-// One line per factor that counts, so a new factor (wind) is one more line, not a longer one.
+// One line per factor that counts, so a new factor (wind) is one more line, not a longer one. Shade
+// and sun are one scale (ADR-030): one line, "Sombra N %" or "Sol N %".
 export function weightsSummary({ weights, maxDetourPercentage, summary = null }) {
   if (summary) return summary;
-  const lines = Object.entries(FACTOR_LABELS)
-    .filter(([factor]) => weights[factor] > 0)
-    .map(([factor, label]) => `${label} ${weights[factor]} %`);
+  const balance = shadeSunBalance(weights);
+  const lines = [
+    balance !== 0 && balanceText(balance),
+    weights.wind > 0 && `Evitar viento ${weights.wind} %`,
+  ].filter(Boolean);
   if (!lines.length) return ['Lo antes posible'];
   return [...lines, `Tiempo +${maxDetourPercentage} %`];
 }

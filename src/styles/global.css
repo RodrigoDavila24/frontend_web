@@ -547,6 +547,78 @@ input:focus-visible {
 .route-profile-weight-sun input { accent-color: #d48a12; }
 .route-profile-weight-wind input { accent-color: #3a7ca5; }
 .route-profile-weight-time .profile-icon { color: #536174; }
+
+/* One bar for shade and sun (ADR-030): shade to the left, neutral in the middle, sun to the right. */
+.route-profile-weight-shade-sun .profile-icon { color: #2c8a5f; }
+
+.shade-sun-ends {
+  display: flex;
+  justify-content: space-between;
+  color: #536174;
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.route-profile-weight .shade-sun-ends span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 650;
+}
+
+.shade-sun-ends .profile-icon-shade { color: #2c8a5f; }
+.shade-sun-ends .profile-icon-sun { color: #d48a12; }
+
+.route-profile-weight-shade-sun .shade-sun-range {
+  /* Own track: the browser fill from the left would suggest shade when sun is chosen. */
+  width: 100%;
+  min-height: 2rem;
+  margin: 0;
+  border-radius: 0.6rem;
+  background: linear-gradient(#8794a6, #8794a6) center / 2px 1rem no-repeat;
+  cursor: pointer;
+  appearance: none;
+}
+
+.shade-sun-range::-webkit-slider-runnable-track {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: linear-gradient(to right, #b9dfcb, #e3e8ee 50%, #f3d9a8);
+}
+
+.shade-sun-range::-moz-range-track {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: linear-gradient(to right, #b9dfcb, #e3e8ee 50%, #f3d9a8);
+}
+
+.shade-sun-range::-webkit-slider-thumb {
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-top: -0.425rem;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: var(--shade-sun-thumb, #536174);
+  box-shadow: 0 1px 4px rgba(28, 42, 63, 0.35);
+  appearance: none;
+}
+
+.shade-sun-range::-moz-range-thumb {
+  width: 1.3rem;
+  height: 1.3rem;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: var(--shade-sun-thumb, #536174);
+  box-shadow: 0 1px 4px rgba(28, 42, 63, 0.35);
+}
+
+.shade-sun-range.is-shade { --shade-sun-thumb: #2c8a5f; }
+.shade-sun-range.is-sun { --shade-sun-thumb: #d48a12; }
+
+.shade-sun-range:focus-visible {
+  outline: 3px solid #b9dfcb;
+  outline-offset: 2px;
+}
 .route-profile-weight-time input { accent-color: #536174; }
 .route-profile-weight-time input:disabled { opacity: 0.45; }
 
@@ -1430,12 +1502,37 @@ input:focus-visible {
 /* The time row has no bar: its value takes the space of the bar and the number. */
 .recommendation-weight-time .recommendation-weight-value { grid-column: 3 / -1; }
 
-.recommendation-weight-shade .profile-icon { color: #2c8a5f; }
-.recommendation-weight-sun .profile-icon { color: #d48a12; }
 .recommendation-weight-wind .profile-icon { color: #3a7ca5; }
 .recommendation-weight-time .profile-icon { color: #536174; }
-.recommendation-weight-shade meter { accent-color: #2c8a5f; }
-.recommendation-weight-sun meter { accent-color: #d48a12; }
+.recommendation-weight-shade-sun .profile-icon { color: #2c8a5f; }
+
+/* Read-only shade-sun scale: filled from the centre towards shade (left) or sun (right). */
+.shade-sun-scale {
+  position: relative;
+  height: 0.55rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e3e8ee;
+}
+
+.shade-sun-scale::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 1px);
+  width: 2px;
+  background: #8794a6;
+  content: '';
+}
+
+.shade-sun-scale-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: #2c8a5f;
+}
+
+.shade-sun-scale.is-sun .shade-sun-scale-fill { background: #d48a12; }
 .recommendation-weight-wind meter { accent-color: #3a7ca5; }
 
 .recommendation-weather,
@@ -2692,6 +2789,11 @@ input:focus-visible {
     width: 2.75rem;
     height: 2.75rem;
   }
+
+  .route-profile-weight input[type='range'] { min-height: 2.75rem; }
+
+  .route-profile-name input,
+  .profile-dialog-actions button { min-height: 2.75rem; }
 
   .route-profiles-all {
     min-height: 2.75rem;

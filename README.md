@@ -132,7 +132,12 @@ solo en el backend.
 - Si alguna tarjeta queda cortada aparece una flecha en ese lado, que mueve la fila; desde 4 rutas,
   "Ver todas" abre un pop-up con todas y un buscador que no distingue tildes ni mayúsculas.
 - Los iconos ＋ y lápiz abren un pop-up con el nombre, una barra "Sombra o sol" (ver abajo) y el tiempo
-  extra máximo (0 a 40 %, desactivado si sombra y sol están en neutro y el viento a 0); en el móvil sube desde abajo. Un nombre repetido se marca en el campo; Escape o tocar fuera lo cierran.
+  extra máximo (0 a 40 %, desactivado si sombra y sol están en neutro y el viento a 0); en el móvil sube desde abajo. Escape o tocar fuera lo cierran.
+- Un nombre que ya tiene otra de tus rutas (sin mayúsculas ni espacios al principio o al final; las
+  tildes cuentan) se avisa mientras escribes, o tras un `409` del backend, con "Reemplazar" (pide
+  confirmación y guarda los pesos sobre la existente; si renombrabas otra ruta, la borra) y "Cambiar
+  nombre" (sugiere "X (2)"). "Recomendada" está reservado. Ver "Comprobaciones de los nombres de ruta
+  repetidos (#165)".
 - Con sombra o sol por encima de 0 se piden fecha y hora; la comparación y la leyenda usan el nombre
   de la ruta elegida.
 - La papelera pide confirmación en otro pop-up y solo borra de tu cuenta; siempre queda al menos una
@@ -194,6 +199,29 @@ dos por encima de 0.
   la tarjeta del motivo de la ruta recomendada usa la misma escala, rellena desde el centro.
 - Comprobado con Playwright y Chrome a 390, 320 y 1366 px (2026-11-12): sin scroll horizontal,
   controles del pop-up de al menos 44×44 px en el móvil y uso completo con el teclado.
+
+## Comprobaciones de los nombres de ruta repetidos (#165)
+
+Con el backend de la rama de #165 (migración `20261112000003-unique-route-profile-names` aplicada) y
+sesión iniciada. Los nombres se comparan sin mayúsculas ni espacios al principio o al final, pero
+las tildes cuentan ("Rapida" no repite "Rápida").
+
+- [ ] En "Nueva ruta", escribir " sombreada " muestra al momento, debajo del nombre, "Ya tienes una
+      ruta llamada «Sombreada»." con "Reemplazar" y "Cambiar nombre"; el campo lo anuncia
+      (`aria-describedby`) y "Guardar" no guarda: lleva el foco a "Reemplazar".
+- [ ] "Cambiar nombre" pone "sombreada (2)" (o el primer número libre) y el foco en el nombre.
+- [ ] "Reemplazar" pregunta "Se sustituirán los pesos de «Sombreada»." con el foco en "Reemplazar
+      «Sombreada»"; "No reemplazar" vuelve a "Reemplazar". Al confirmar, Sombreada queda elegida
+      con los pesos nuevos y no hay dos Sombreada.
+- [ ] Editar otra ruta y renombrarla a "SOLEADA": la pregunta añade "y se borrará «…»"; al confirmar
+      se actualiza Soleada (PUT) y se borra la editada (DELETE). Si el DELETE falla se cierra la
+      ventana con "Se ha actualizado «Soleada», pero no se ha podido borrar «…»." y se recarga la lista.
+- [ ] Si el backend responde `409` (la ruta se creó en otra pestaña), aparece el mismo aviso con
+      "Reemplazar" sobre la ruta de `existingId`.
+- [ ] "recomendada" muestra "«Recomendada» es la ruta automática: elige otro nombre." y no se guarda.
+- [ ] Funciona igual con las predefinidas copiadas al usuario (Rápida, Sombreada, Soleada).
+- [ ] A 390 y 320 px los botones miden al menos 44 px y no hay scroll horizontal; todo se puede hacer
+      con el teclado.
 
 ## Comprobaciones de la PBI-10 fase B (el verde en las rutas)
 

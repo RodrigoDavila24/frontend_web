@@ -15,6 +15,20 @@ export const FALLBACK_PROFILES = [
   { id: 'sunny', name: 'Soleada', presetKey: 'sunny', weights: { shade: 0, sun: 50, wind: 0 } },
 ].map((profile) => ({ ...profile, maxDetourPercentage: 25 }));
 
+// The recommended route (PBI-9.1, ADR-029) is not a saved route: the backend chooses its weights
+// with the current weather, so it cannot be edited or deleted and is not stored per user.
+export const RECOMMENDED_PROFILE_ID = 'recommended';
+export const RECOMMENDED_PROFILE = {
+  id: RECOMMENDED_PROFILE_ID,
+  name: 'Recomendada',
+  presetKey: null,
+  readOnly: true,
+  icon: 'recommended',
+  summary: ['Según el tiempo'],
+  weights: { shade: 0, sun: 0, wind: 0 },
+  maxDetourPercentage: 25,
+};
+
 // Wind is one more factor since PBI-8.2 (ADR-025).
 export const hasEnvironmentalWeight = (weights) =>
   weights.shade > 0 || weights.sun > 0 || weights.wind > 0;

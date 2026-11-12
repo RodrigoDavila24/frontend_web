@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { ProfileIcon } from './ProfileIcon.jsx';
 
 const MAX_NAME_LENGTH = 40;
-const WEIGHT_FIELDS = [
+// Also used to show the weights of the recommended route (PBI-9.1) with the same icons and scale.
+export const WEIGHT_FIELDS = [
   { key: 'shade', label: 'Sombra', icon: 'shade' },
   { key: 'sun', label: 'Sol', icon: 'sun' },
   { key: 'wind', label: 'Evitar viento', icon: 'wind' },

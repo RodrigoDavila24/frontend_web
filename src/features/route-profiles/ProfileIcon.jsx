@@ -16,6 +16,13 @@ const PATHS = {
   ),
   // Gusts: wind.
   wind: <path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8a2.5 2.5 0 1 1-2.5 2.5" />,
+  // Thermometer: the route chosen with the current weather (PBI-9.1).
+  recommended: (
+    <>
+      <path d="M10 14.5V5a2 2 0 1 1 4 0v9.5a4 4 0 1 1-4 0Z" />
+      <path d="M12 9v8" />
+    </>
+  ),
   plus: <path d="M12 5v14M5 12h14" />,
   time: (
     <>
@@ -53,8 +60,16 @@ export function ProfileIcon({ kind }) {
   );
 }
 
-// What a route favours: shade, sun, wind or several, and time if every weight is 0.
-export function ProfileIcons({ weights }) {
+// What a route favours: shade, sun, wind or several, and time if every weight is 0. A route with its
+// own icon (the recommended one) shows only that.
+export function ProfileIcons({ weights, icon = null }) {
+  if (icon) {
+    return (
+      <span className="profile-icons">
+        <ProfileIcon kind={icon} />
+      </span>
+    );
+  }
   const kinds = [
     weights.shade > 0 && 'shade',
     weights.sun > 0 && 'sun',

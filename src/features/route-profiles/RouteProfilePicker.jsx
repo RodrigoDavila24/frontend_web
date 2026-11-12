@@ -64,7 +64,8 @@ export function RouteProfilePicker({
             >
               <ProfileIcon kind="plus" />
             </button>
-            {selected && (
+            {/* The recommended route is chosen by the backend: nothing to edit or delete. */}
+            {selected && !selected.readOnly && (
               <>
                 <button
                   type="button"

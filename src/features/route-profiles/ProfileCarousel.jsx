@@ -5,7 +5,8 @@ import { ProfileIcon, ProfileIcons } from './ProfileIcon.jsx';
 const FACTOR_LABELS = { shade: 'Sombra', sun: 'Sol', wind: 'Evitar viento' };
 
 // One line per factor that counts, so a new factor (wind) is one more line, not a longer one.
-export function weightsSummary({ weights, maxDetourPercentage }) {
+export function weightsSummary({ weights, maxDetourPercentage, summary = null }) {
+  if (summary) return summary;
   const lines = Object.entries(FACTOR_LABELS)
     .filter(([factor]) => weights[factor] > 0)
     .map(([factor, label]) => `${label} ${weights[factor]} %`);
@@ -78,7 +79,7 @@ export function ProfileCarousel({ profiles, selectedId, onSelect }) {
             aria-label={profile.name}
             onClick={() => onSelect(profile.id)}
           >
-            <ProfileIcons weights={profile.weights} />
+            <ProfileIcons weights={profile.weights} icon={profile.icon} />
             <strong>{profile.name}</strong>
             <span className="route-profile-summary" aria-hidden="true">
               {weightsSummary(profile).map((line) => (

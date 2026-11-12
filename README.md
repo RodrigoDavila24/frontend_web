@@ -195,6 +195,27 @@ dos por encima de 0.
 - Comprobado con Playwright y Chrome a 390, 320 y 1366 px (2026-11-12): sin scroll horizontal,
   controles del pop-up de al menos 44×44 px en el móvil y uso completo con el teclado.
 
+## Comprobaciones de la PBI-10 fase B (el verde en las rutas)
+
+El backend calcula el porcentaje de trayecto verde de cada ruta (árboles y parques, ADR-026) y lo
+usa con el peso de vegetación (ADR-031: ver DECISIONS.md en la carpeta docs del Drive del equipo).
+
+- El pop-up de una ruta tiene una barra "Verde" (0 a 100 %, de 5 en 5) con una hoja, independiente de
+  la barra "Sombra o sol": se pueden pedir a la vez un paseo con sombra y verde. Las rutas guardadas
+  antes la tienen a 0.
+- Con solo verde se puede elegir el tiempo extra y no se piden fecha y hora: el verde no depende
+  del Sol, así que también funciona de noche.
+- La tarjeta de la ruta muestra la hoja y "Verde N %"; también en "Ver todas".
+- Al calcular, cada tarjeta de la comparación muestra su "N % verde" (cuando pesan el verde, la
+  sombra o el sol), el resumen añade "N puntos más de verde" y el resumen de la ruta, una métrica
+  "Verde".
+- La tarjeta del motivo de la ruta recomendada tiene la fila "Verde", a 0 %: la recomendación aún
+  no pesa el verde.
+- Prueba real del 2026-11-12 con Playwright y Chrome a 390, 320 y 1366 px: una ruta "Parques" solo
+  con verde al 100 %, de Plaza del Pilar a Plaza San Francisco, elige una alternativa de 31 min con
+  el 50 % verde frente a la rápida de 31 min con el 31 % ("añade 1 min y tiene 19 puntos más de
+  verde"). Sin scroll horizontal, barra de 44 px en el móvil y todo con el teclado.
+
 ## Comprobaciones de Iniciar ruta
 
 - Tras calcular una ruta, "Iniciar ruta" pide la ubicación y sustituye el buscador por la indicación.

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { RouteProfilePicker } from './RouteProfilePicker.jsx';
+import { RECOMMENDED_PROFILE } from './useRouteProfiles.js';
 
 const profiles = [
   { id: 1, name: 'Rápida', presetKey: 'fastest', weights: { shade: 0, sun: 0 } },
@@ -242,5 +243,31 @@ describe('RouteProfilePicker', () => {
     expect(screen.getByRole('status')).toHaveTextContent('No se han podido cargar tus rutas');
     expect(screen.queryByRole('button', { name: 'Nueva ruta' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Editar/ })).not.toBeInTheDocument();
+  });
+
+  describe('recommended route (PBI-9.1)', () => {
+    it('shows it with its own summary and without edit or delete', () => {
+      renderPicker({ profiles: [RECOMMENDED_PROFILE, ...profiles], selectedId: 'recommended' });
+
+      expect(screen.getByRole('button', { name: 'Recomendada' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+      );
+      expect(screen.getByText('Según el tiempo')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Nueva ruta' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Editar/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Borrar/ })).not.toBeInTheDocument();
+    });
+
+    it('lists it in "Ver todas" with its summary', async () => {
+      const user = userEvent.setup();
+      renderPicker({
+        profiles: [RECOMMENDED_PROFILE, ...profiles, { ...profiles[1], id: 3, name: 'Verano' }],
+      });
+
+      await user.click(screen.getByRole('button', { name: 'Ver todas' }));
+
+      expect(within(screen.getByRole('dialog')).getByText('Según el tiempo')).toBeInTheDocument();
+    });
   });
 });

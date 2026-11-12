@@ -1,4 +1,4 @@
-import { getFastestRoute, getWeightedRouteComparison } from './routesApi.js';
+import { getFastestRoute, getRecommendedRoute, getWeightedRouteComparison } from './routesApi.js';
 
 describe('getFastestRoute', () => {
   const originalFetch = global.fetch;
@@ -178,5 +178,110 @@ describe('getFastestRoute', () => {
         weights: { shade: 50, sun: 0 },
       })
     ).rejects.toThrow('comparación no válida');
+  });
+
+  describe('getRecommendedRoute (PBI-9.1)', () => {
+    const recommendation = {
+      criterion: 'hot',
+      label: 'Calor',
+      reason:
+        'Hace calor (sensación de 31 °C): se busca sombra aceptando hasta un 25 % más de tiempo.',
+      weights: { shade: 50, sun: 0, wind: 0 },
+      maxDetourPercentage: 25,
+      weather: {
+        temperature: 30,
+        windSpeed: 8,
+        windDirection: 300,
+        observedAt: '2026-07-15T13:00',
+      },
+      rules: [],
+    };
+    const shadedRoute = {
+      ...route,
+      exposure: { status: 'available', shadePercentage: 80, sunPercentage: 20 },
+      windExposure: { status: 'available', exposure: 0 },
+    };
+    const reply = (comparison) => ({ ok: true, json: async () => ({ comparison }) });
+
+    it('posts only the points and keeps the recommendation', async () => {
+      const comparison = {
+        status: 'selected',
+        fastest: shadedRoute,
+        selected: shadedRoute,
+        additionalDurationSeconds: 60,
+        shadeChangePercentagePoints: 60,
+        windChangePoints: 0,
+        recommendation,
+      };
+      global.fetch = jest.fn().mockResolvedValue(reply(comparison));
+
+      await expect(getRecommendedRoute({ origin, destination })).resolves.toEqual({
+        ...comparison,
+        shaded: shadedRoute,
+        shadeImprovementPercentagePoints: 60,
+        windChangePoints: 0,
+      });
+      expect(global.fetch.mock.calls[0][0]).toMatch(/\/routes\/recommended$/);
+      // Always for now: no date, time or weights are sent.
+      expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toEqual({
+        origin: { lat: origin.lat, lng: origin.lng },
+        destination: { lat: destination.lat, lng: destination.lng },
+      });
+    });
+
+    it('accepts the fastest route alone, without shade data, and a missing weather', async () => {
+      global.fetch = jest.fn().mockResolvedValue(
+        reply({
+          status: 'fastest_only',
+          fastest: { ...route, windExposure: { status: 'unavailable', exposure: null } },
+          selected: null,
+          additionalDurationSeconds: null,
+          recommendation: {
+            ...recommendation,
+            criterion: 'weather_unavailable',
+            weights: { shade: 0, sun: 0, wind: 0 },
+            weather: null,
+          },
+        })
+      );
+
+      await expect(getRecommendedRoute({ origin, destination })).resolves.toMatchObject({
+        status: 'fastest_only',
+        shaded: null,
+        recommendation: { criterion: 'weather_unavailable', weather: null },
+      });
+    });
+
+    it.each([
+      ['without recommendation', { recommendation: undefined }],
+      [
+        'with weights out of range',
+        { recommendation: { ...recommendation, weights: { shade: 150, sun: 0, wind: 0 } } },
+      ],
+      ['without reason', { recommendation: { ...recommendation, reason: null } }],
+      ['with an invalid route', { fastest: { ...shadedRoute, distance: -1 } }],
+    ])('rejects a reply %s', async (_case, overrides) => {
+      global.fetch = jest.fn().mockResolvedValue(
+        reply({
+          status: 'no_better_alternative',
+          fastest: shadedRoute,
+          selected: null,
+          additionalDurationSeconds: null,
+          recommendation,
+          ...overrides,
+        })
+      );
+
+      await expect(getRecommendedRoute({ origin, destination })).rejects.toThrow(
+        'ruta recomendada no válida'
+      );
+    });
+
+    it('keeps the route error messages', async () => {
+      global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 504 });
+      await expect(getRecommendedRoute({ origin, destination })).rejects.toThrow(
+        'ha tardado demasiado'
+      );
+    });
   });
 });

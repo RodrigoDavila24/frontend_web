@@ -268,3 +268,27 @@ describe('RouteComparisonPanel', () => {
     expect(screen.getByRole('status')).toHaveTextContent('El Sol está demasiado bajo');
   });
 });
+
+describe('RouteComparisonPanel with the recommended route (PBI-9.1)', () => {
+  it('explains that the fastest route is the recommended one, without shade data', () => {
+    render(
+      <RouteComparisonPanel
+        comparison={{
+          status: 'fastest_only',
+          fastest: { duration: 600, windExposure: { status: 'unavailable', exposure: null } },
+          shaded: null,
+          additionalDurationSeconds: null,
+        }}
+        selectedRouteType="fastest"
+        alternativeLabel="Recomendada"
+        onSelectRoute={jest.fn()}
+      />
+    );
+
+    expect(
+      screen.getByText('Con el tiempo actual, la ruta recomendada es la más rápida.')
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/sombra/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Recomendada/ })).toBeDisabled();
+  });
+});

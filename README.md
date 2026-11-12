@@ -145,6 +145,33 @@ solo en el backend.
 - Con una ruta elegida, el resumen dice cuánto cambian la sombra y la exposición al viento.
 - Con viento flojo (menos de 10 km/h) la exposición es 0 y la ruta elegida es la rápida.
 
+## Comprobaciones de la PBI-9.1 (ruta recomendada)
+
+La ruta recomendada la decide el backend con el tiempo actual: `POST /api/routes/recommended` solo
+recibe `origin` y `destination` y devuelve la comparación de siempre más `recommendation` (criterio,
+pesos aplicados, tiempo extra, motivo, tiempo usado y reglas). La regla está en el ADR-029: ver
+DECISIONS.md y ROUTING.md en la carpeta docs del Drive del equipo, y el contrato en el README del
+backend.
+
+- La tarjeta "Recomendada" (icono de termómetro, "Según el tiempo") es la primera de la fila, pero al
+  entrar sigue elegida "Rápida". No se guarda con tus rutas, no cuenta para el máximo de 20 y no se
+  puede editar ni borrar: al elegirla desaparecen el lápiz y la papelera (el ＋ sigue).
+- Con "Recomendada" no se piden fecha y hora: se calcula para ahora.
+- Tras calcular aparece el bloque "Recomendada: <criterio>" con el motivo, los pesos aplicados con
+  los mismos iconos y escala de 0 a 100 % que el editor (sombra, sol y evitar viento), el tiempo extra
+  máximo ("Sin rodeo" si todo está a 0) y el tiempo usado (temperatura, sensación, viento con su
+  dirección y rachas, hora del dato y "Datos del tiempo: Open-Meteo").
+- Si el tiempo recomienda la ruta rápida (p. ej. templado, de noche o sin datos de Open-Meteo), la
+  comparación dice "Con el tiempo actual, la ruta recomendada es la más rápida." y se puede iniciar.
+- En el móvil, con la comparación plegada solo se ven el criterio y el motivo; "Ver más" muestra los
+  pesos y el tiempo. Con el recorrido abierto el bloque se oculta, como la comparación.
+- En el móvil (390 y 320 px) todos los botones y campos del panel miden al menos 44×44 px, no hay
+  scroll horizontal y a 320 px no se muestra el título "Tipo de ruta" para que quepan los botones.
+  Todo se puede hacer con el teclado: Tab hasta "Recomendada" y Enter, flechas y Enter en las
+  sugerencias, y Enter en "Calcular ruta" y "Ver más".
+- Prueba real del 2026-11-12 (11:23, 18 °C, sensación 17,5 °C, viento de 13 km/h): Plaza España →
+  Parque Grande da "Tiempo templado", pesos a 0 y la misma ruta que "Rápida" (33 min, 2,8 km).
+
 ## Comprobaciones de Iniciar ruta
 
 - Tras calcular una ruta, "Iniciar ruta" pide la ubicación y sustituye el buscador por la indicación.

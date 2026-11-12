@@ -425,6 +425,33 @@ describe('App', () => {
   });
 
   describe('routes of the user', () => {
+    it('calculates a green route without asking for date and time (PBI-10 phase B)', async () => {
+      const user = userEvent.setup();
+      const parks = {
+        id: 4,
+        name: 'Parques',
+        presetKey: null,
+        weights: { shade: 0, sun: 0, wind: 0, vegetation: 80 },
+        maxDetourPercentage: 25,
+      };
+      listRouteProfiles.mockResolvedValue([...PROFILES, parks]);
+      getWeightedRouteComparison.mockReturnValue(new Promise(() => {}));
+      render(<App />);
+
+      await user.click(await screen.findByRole('button', { name: 'Parques' }));
+      // The green does not depend on the Sun: no date and time.
+      expect(screen.queryByLabelText('Hora')).not.toBeInTheDocument();
+      await user.click(screen.getByText('Select map point'));
+      await user.click(screen.getByText('Select map point'));
+      await user.click(screen.getByRole('button', { name: 'Calcular ruta' }));
+
+      expect(getWeightedRouteComparison).toHaveBeenCalledWith(
+        expect.objectContaining({ weights: parks.weights, maxDetourPercentage: 25 }),
+        { signal: expect.any(AbortSignal) }
+      );
+      expect(getFastestRoute).not.toHaveBeenCalled();
+    });
+
     it('starts with the fastest route and only asks for it, without weights', async () => {
       const user = userEvent.setup();
       getFastestRoute.mockReturnValue(new Promise(() => {}));

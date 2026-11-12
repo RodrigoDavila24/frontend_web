@@ -101,3 +101,28 @@ describe('AllProfilesDialog', () => {
     expect(screen.getByRole('status')).toHaveTextContent('No tienes ninguna ruta con ese nombre.');
   });
 });
+
+describe('ProfileCarousel with the green (PBI-10 phase B)', () => {
+  it('shows a leaf and a "Verde N %" line for a route that weighs the green', () => {
+    render(
+      <ProfileCarousel
+        profiles={[
+          {
+            id: 7,
+            name: 'Parques',
+            weights: { shade: 40, sun: 0, wind: 0, vegetation: 60 },
+            maxDetourPercentage: 20,
+          },
+        ]}
+        selectedId={7}
+        onSelect={jest.fn()}
+      />
+    );
+    const card = screen.getByRole('button', { name: 'Parques' });
+
+    expect(card.querySelectorAll('.profile-icon-shade, .profile-icon-vegetation')).toHaveLength(2);
+    expect(screen.getByText('Sombra 40 %')).toBeInTheDocument();
+    expect(screen.getByText('Verde 60 %')).toBeInTheDocument();
+    expect(screen.getByText('Tiempo +20 %')).toBeInTheDocument();
+  });
+});

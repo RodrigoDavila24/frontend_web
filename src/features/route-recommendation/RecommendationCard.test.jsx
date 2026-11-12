@@ -38,6 +38,8 @@ describe('RecommendationCard', () => {
     expect(shadeSun).toHaveAttribute('aria-valuetext', 'Sombra 50 %');
     expect(shadeSun.closest('li')).toHaveTextContent('Sombra 50 %');
     expect(weights.getByLabelText('Evitar viento')).toHaveAttribute('value', '50');
+    // The recommendation does not weigh the green yet (ADR-029): the row shows 0 %.
+    expect(weights.getByLabelText('Verde')).toHaveAttribute('value', '0');
     expect(weights.getByText('Tiempo extra máximo').closest('li')).toHaveTextContent('+25 %');
     expect(
       screen.getByText(

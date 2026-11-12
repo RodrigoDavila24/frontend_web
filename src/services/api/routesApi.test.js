@@ -287,3 +287,59 @@ describe('getFastestRoute', () => {
     });
   });
 });
+
+describe('green percentage in the weighted comparison (PBI-10 phase B)', () => {
+  const originalFetch = global.fetch;
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+  const geometry = {
+    type: 'LineString',
+    coordinates: [
+      [-0.8891, 41.6488],
+      [-0.878, 41.656],
+    ],
+  };
+  const greenRoute = (greenPercentage) => ({
+    geometry,
+    distance: 1000,
+    duration: 600,
+    exposure: { status: 'unavailable', shadePercentage: null, sunPercentage: null },
+    vegetation: { status: 'available', greenPercentage },
+  });
+  const request = {
+    origin: { lat: 41.6488, lng: -0.8891 },
+    destination: { lat: 41.656, lng: -0.878 },
+    date: '2026-11-12',
+    time: '23:00',
+    weights: { shade: 0, sun: 0, wind: 0, vegetation: 100 },
+  };
+  const reply = (selected, greenChangePercentagePoints) => ({
+    ok: true,
+    json: async () => ({
+      comparison: {
+        status: 'selected',
+        fastest: greenRoute(5),
+        selected,
+        additionalDurationSeconds: 60,
+        greenChangePercentagePoints,
+      },
+    }),
+  });
+
+  it('keeps the green of each route and its change, and sends the vegetation weight', async () => {
+    global.fetch = jest.fn().mockResolvedValue(reply(greenRoute(80), 75));
+
+    await expect(getWeightedRouteComparison(request)).resolves.toMatchObject({
+      shaded: { vegetation: { greenPercentage: 80 } },
+      greenChangePercentagePoints: 75,
+    });
+    expect(JSON.parse(global.fetch.mock.calls[0][1].body).weights).toEqual(request.weights);
+  });
+
+  it('rejects an impossible green percentage', async () => {
+    global.fetch = jest.fn().mockResolvedValue(reply(greenRoute(130), 125));
+
+    await expect(getWeightedRouteComparison(request)).rejects.toThrow('comparación no válida');
+  });
+});

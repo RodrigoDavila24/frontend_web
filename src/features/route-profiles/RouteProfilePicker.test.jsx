@@ -358,3 +358,60 @@ describe('RouteProfilePicker', () => {
     });
   });
 });
+
+describe('RouteProfilePicker with the green (PBI-10 phase B)', () => {
+  it('saves a route with a vegetation weight from its own bar', async () => {
+    const user = userEvent.setup();
+    const onSave = jest.fn().mockResolvedValue({ id: 3, name: 'Parques' });
+    render(
+      <RouteProfilePicker
+        profiles={profiles}
+        selectedId={1}
+        isEditable
+        loadFailed={false}
+        onSelect={jest.fn()}
+        onSave={onSave}
+        onDelete={jest.fn()}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Nueva ruta' }));
+    const dialog = within(screen.getByRole('dialog', { name: 'Nueva ruta' }));
+    await user.type(dialog.getByLabelText('Nombre'), 'Parques');
+    fireEvent.change(dialog.getByRole('slider', { name: 'Sombra o sol' }), {
+      target: { value: '0' },
+    });
+    const green = dialog.getByRole('slider', { name: 'Verde' });
+    expect(green).toHaveValue('0');
+    // Only the green weighs: there is still a detour to choose.
+    fireEvent.change(green, { target: { value: '80' } });
+    expect(green).toHaveAttribute('aria-valuetext', '80 %');
+    expect(dialog.getByRole('slider', { name: 'Tiempo extra máximo' })).toBeEnabled();
+    await user.click(dialog.getByRole('button', { name: 'Guardar' }));
+
+    expect(onSave).toHaveBeenCalledWith(null, {
+      name: 'Parques',
+      weights: { shade: 0, sun: 0, wind: 0, vegetation: 80 },
+      maxDetourPercentage: 25,
+    });
+  });
+
+  it('opens a route saved before the green with it at 0', async () => {
+    const user = userEvent.setup();
+    render(
+      <RouteProfilePicker
+        profiles={profiles}
+        selectedId={2}
+        isEditable
+        loadFailed={false}
+        onSelect={jest.fn()}
+        onSave={jest.fn()}
+        onDelete={jest.fn()}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Editar Sombreada' }));
+
+    expect(screen.getByRole('slider', { name: 'Verde' })).toHaveValue('0');
+  });
+});
